@@ -18,7 +18,8 @@ async function test() {
     const modelsResponse = await ai.models.list();
     console.log("Available models:");
     for await (const m of modelsResponse) {
-      if (m.supportedGenerationMethods?.includes('generateContent')) {
+      const supportedGenerationMethods = (m as any).supportedGenerationMethods;
+      if (supportedGenerationMethods?.includes('generateContent')) {
         console.log(` - ${m.name}`);
       }
     }

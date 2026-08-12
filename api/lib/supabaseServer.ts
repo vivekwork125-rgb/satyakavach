@@ -35,10 +35,9 @@ export const supabaseServer = createClient(
       autoRefreshToken: false,
     },
     realtime: {
-      transport: ws,
+      transport: ws as any,
     },
   }
 );
-
 
 

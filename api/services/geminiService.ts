@@ -7,7 +7,6 @@
  * and caused silent 400 errors misclassified as rate limits.
  */
 import { GoogleGenAI } from "@google/genai";
-import { GoogleGenerativeAI } from "@google/generative-ai";
 import { AnalysisResult } from "../../types";
 
 export class AnalysisError extends Error {
@@ -85,36 +84,17 @@ export const callGeminiAPI = async (newsText: string): Promise<AnalysisResult> =
   let response: any = null;
   let lastError: any = null;
 
-  // Primary: Try GoogleGenerativeAI standard v1 stable SDK
   try {
-    console.log(`[Gemini Service] >>> Attempting primary GoogleGenerativeAI (gemini-1.5-flash)...`);
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-    const res = await model.generateContent(prompt);
-    const textOut = res.response.text();
-    if (textOut) {
-      response = { text: textOut };
-      console.log(`[Gemini Service] <<< GoogleGenerativeAI (gemini-1.5-flash) SUCCESS!`);
-    }
-  } catch (primaryErr: any) {
-    console.warn(`[Gemini Service] ⚠️ Primary GoogleGenerativeAI failed: ${primaryErr.message}`);
-    lastError = primaryErr;
-  }
-
-  // Fallback: Try @google/genai candidate loop if primary failed
-  if (!response) {
     const ai = new GoogleGenAI({ apiKey });
     const CANDIDATE_MODELS = [
-      "gemini-1.5-flash-002",
-      "gemini-1.5-flash-001",
-      "gemini-1.5-flash-latest",
-      "gemini-2.0-flash-exp",
-      "gemini-1.5-pro-002"
+      "gemini-3.1-flash-lite",
+      "gemini-3.5-flash",
+      "gemini-3.1-pro-preview"
     ];
 
     for (const model of CANDIDATE_MODELS) {
       try {
-        console.log(`[Gemini Service] >>> Fallback: Attempting model ${model}...`);
+        console.log(`[Gemini Service] >>> Attempting model ${model}...`);
         const startTime = Date.now();
         
         response = await ai.models.generateContent({
@@ -127,7 +107,7 @@ export const callGeminiAPI = async (newsText: string): Promise<AnalysisResult> =
         });
 
         const latency = Date.now() - startTime;
-        console.log(`[Gemini Service] <<< Fallback ${model} SUCCESS in ${latency}ms`);
+        console.log(`[Gemini Service] <<< ${model} SUCCESS in ${latency}ms`);
         break;
       } catch (err: any) {
         lastError = err;
@@ -136,14 +116,28 @@ export const callGeminiAPI = async (newsText: string): Promise<AnalysisResult> =
           console.warn(`[Gemini Service] ⚠️ Model ${model} returned 404, trying next...`);
           continue;
         }
+        if (err.status === 429 || msg.includes('429') || msg.includes('quota') || msg.includes('resource_exhausted')) {
+          console.warn(`[Gemini Service] ⚠️ Model ${model} quota/rate limit hit, trying next...`);
+          continue;
+        }
         throw err;
       }
     }
-  }
 
-  if (!response) {
-    throw lastError || new Error("All Gemini model candidates failed.");
-  }
+    if (!response) {
+      const lastMsg = (lastError?.message || "").toLowerCase();
+      if (lastError?.status === 429 || lastMsg.includes('429') || lastMsg.includes('quota') || lastMsg.includes('resource_exhausted')) {
+        throw new AnalysisError(
+          `Gemini API quota/rate limit exceeded for all configured models. Tried: ${CANDIDATE_MODELS.join(', ')}. Last error: ${lastError?.message || 'unknown'}`,
+          'RATE_LIMIT'
+        );
+      }
+
+      throw new AnalysisError(
+        `No configured Gemini model is available for this API key. Tried: ${CANDIDATE_MODELS.join(', ')}. Last error: ${lastError?.message || 'unknown'}`,
+        'AUTH'
+      );
+    }
 
     // response.text is a getter in @google/genai SDK that may return undefined/empty on blocked responses.
     // Coerce to string safely before using.
