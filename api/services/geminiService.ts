@@ -79,8 +79,8 @@ export const callGeminiAPI = async (newsText: string): Promise<AnalysisResult> =
 
   const ai = new GoogleGenAI({ apiKey });
   
-  // Always use active stable model ID gemini-2.0-flash
-  const MODEL = "gemini-2.0-flash";
+  // Stable global production model ID: gemini-1.5-flash
+  const MODEL = "gemini-1.5-flash";
   
   const prompt = `Fact-check this claim using Search Grounding. Return ONLY valid JSON matching this schema:
   {"verdict":"REAL"|"FAKE"|"MISLEADING"|"UNVERIFIED","confidence":<0-100>,"explanation":"<brief_explanation_english>","explanation_te":"<brief_explanation_in_telugu_script>","keyPoints":["<fact1_english>","<fact2_english>"],"keyPoints_te":["<fact1_telugu>","<fact2_telugu>"],"bias":<0-100>,"sensationalism":<0-100>,"logicalConsistency":<0-100>,"sourceVerification":[{"uri":"<url>","verified":<boolean>}]}

@@ -14,9 +14,9 @@ async function test() {
   try {
     const ai = new GoogleGenAI({ apiKey });
     
-    console.log("Sending test request to gemini-2.0-flash...");
+    console.log("Sending test request to gemini-1.5-flash...");
     const response = await ai.models.generateContent({
-      model: process.env.GEMINI_MODEL || "gemini-2.0-flash",
+      model: "gemini-1.5-flash",
       contents: "Say 'Hello World' if you receive this."
     });
 
