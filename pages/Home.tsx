@@ -68,21 +68,8 @@ const Home: React.FC = () => {
       console.error('[Home] handleAnalyze ERROR:', err);
       const msg: string = err?.message || '';
 
-      let userMessage: string;
-      if (msg.toLowerCase().includes('quota') || msg.includes('429') || msg.toLowerCase().includes('rate')) {
-        userMessage = 'AI service is temporarily busy (Rate Limit). Please wait 10–15 seconds and try again.';
-      } else if (msg.toLowerCase().includes('throttle') || msg.toLowerCase().includes('too many')) {
-        userMessage = 'Request throttled. Please wait a moment before analyzing again.';
-      } else if (msg.toLowerCase().includes('safety')) {
-        userMessage = 'Your input triggered a safety filter. Please try different content.';
-      } else if (msg.toLowerCase().includes('api key') || msg.toLowerCase().includes('configuration')) {
-        userMessage = 'Server configuration error. Please contact support.';
-      } else if (msg.toLowerCase().includes('network') || msg.toLowerCase().includes('fetch')) {
-        userMessage = 'Network error. Please check your connection and try again.';
-      } else {
-        userMessage = msg || 'Verification failed. Please try again.';
-      }
-
+      // Display actual server error message so user sees exact details
+      const userMessage = msg.trim() || 'Verification failed. Please try again.';
       setError(userMessage);
       // Always reset to idle — never leave stuck on 'analyzing' or 'result' with null
       setAppState({ status: 'idle', result: null });
