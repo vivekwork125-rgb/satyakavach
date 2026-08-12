@@ -14,14 +14,14 @@ async function test() {
   try {
     const ai = new GoogleGenAI({ apiKey });
     
-    console.log("Sending test request to gemini-1.5-flash...");
-    const response = await ai.models.generateContent({
-      model: "gemini-1.5-flash",
-      contents: "Say 'Hello World' if you receive this."
-    });
-
-    console.log("\n✅ SUCCESS! Gemini says:");
-    console.log(response.text);
+    console.log("Listing available models from Google AI API...");
+    const modelsResponse = await ai.models.list();
+    console.log("Available models:");
+    for await (const m of modelsResponse) {
+      if (m.supportedGenerationMethods?.includes('generateContent')) {
+        console.log(` - ${m.name}`);
+      }
+    }
   } catch (error: any) {
     console.error("\n❌ FAILED - Server responded with:");
     if (error.status) console.error("HTTP Status:", error.status);

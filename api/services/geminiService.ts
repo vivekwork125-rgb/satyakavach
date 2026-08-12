@@ -79,30 +79,58 @@ export const callGeminiAPI = async (newsText: string): Promise<AnalysisResult> =
 
   const ai = new GoogleGenAI({ apiKey });
   
-  // Stable global production model ID: gemini-1.5-flash
-  const MODEL = "gemini-1.5-flash";
+  const CANDIDATE_MODELS = [
+    "gemini-1.5-flash-002",
+    "gemini-1.5-flash-001",
+    "gemini-1.5-flash-latest",
+    "gemini-1.5-flash",
+    "gemini-2.0-flash-exp",
+    "gemini-1.5-pro-002"
+  ];
   
   const prompt = `Fact-check this claim using Search Grounding. Return ONLY valid JSON matching this schema:
   {"verdict":"REAL"|"FAKE"|"MISLEADING"|"UNVERIFIED","confidence":<0-100>,"explanation":"<brief_explanation_english>","explanation_te":"<brief_explanation_in_telugu_script>","keyPoints":["<fact1_english>","<fact2_english>"],"keyPoints_te":["<fact1_telugu>","<fact2_telugu>"],"bias":<0-100>,"sensationalism":<0-100>,"logicalConsistency":<0-100>,"sourceVerification":[{"uri":"<url>","verified":<boolean>}]}
   
   CLAIM: "${newsText}"`;
 
-  try {
-    console.log(`[Gemini Service] >>> Starting request to model: ${MODEL}`);
-    console.log(`[Gemini Service] >>> Prompt length: ${prompt.length} chars`);
-    const startTime = Date.now();
-    
-    const response = await ai.models.generateContent({
-      model: MODEL,
-      contents: prompt,
-      config: {
-        tools: [{ googleSearch: {} }],
-        temperature: 0.1, 
-      },
-    });
+  let response: any = null;
+  let lastError: any = null;
+  let usedModel = "";
 
-    const latency = Date.now() - startTime;
-    console.log(`[Gemini Service] <<< Response received in ${latency}ms`);
+  for (const model of CANDIDATE_MODELS) {
+    try {
+      console.log(`[Gemini Service] >>> Attempting model: ${model}`);
+      const startTime = Date.now();
+      
+      response = await ai.models.generateContent({
+        model,
+        contents: prompt,
+        config: {
+          tools: [{ googleSearch: {} }],
+          temperature: 0.1, 
+        },
+      });
+
+      const latency = Date.now() - startTime;
+      console.log(`[Gemini Service] <<< Response received from ${model} in ${latency}ms`);
+      usedModel = model;
+      break; // Success! Exit loop
+    } catch (err: any) {
+      lastError = err;
+      const msg = (err.message || "").toLowerCase();
+      // If model not found (404), try next candidate
+      if (err.status === 404 || msg.includes('not found') || msg.includes('404')) {
+        console.warn(`[Gemini Service] ⚠️ Model ${model} returned 404, trying next candidate...`);
+        continue;
+      }
+      // If it's auth/rate limit, throw immediately (don't waste candidates)
+      throw err;
+    }
+  }
+
+  if (!response) {
+    throw lastError || new Error("All Gemini model candidates failed.");
+  }
 
     // response.text is a getter in @google/genai SDK that may return undefined/empty on blocked responses.
     // Coerce to string safely before using.
