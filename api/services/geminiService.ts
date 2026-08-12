@@ -184,25 +184,33 @@ export const callGeminiAPI = async (newsText: string): Promise<AnalysisResult> =
 
     const errorMsg = (error.message || "").toLowerCase();
 
-    // Rate limit check (check FIRST — most common)
-    if (error.status === 429 || errorMsg.includes('429') || errorMsg.includes('resource_exhausted')) {
+    // Auth & Invalid API Key checks (check FIRST)
+    if (
+      error.status === 400 ||
+      error.status === 401 ||
+      error.status === 403 ||
+      errorMsg.includes('api_key_invalid') ||
+      errorMsg.includes('api key not valid') ||
+      errorMsg.includes('invalid_argument') ||
+      errorMsg.includes('permission denied')
+    ) {
       throw new AnalysisError(
-        `Gemini quota/rate limit exceeded. Raw: ${error.message}`, 
-        'RATE_LIMIT'
+        `API Key Error: Please check that your GEMINI_API_KEY in .env / Vercel is valid. (${error.message})`, 
+        'AUTH'
       );
     }
 
-    // Auth check
-    if (error.status === 403 || error.status === 401 || errorMsg.includes('api_key_invalid') || errorMsg.includes('api key not valid') || errorMsg.includes('permission denied')) {
+    // Rate limit check
+    if (error.status === 429 || errorMsg.includes('429') || errorMsg.includes('resource_exhausted') || errorMsg.includes('quota')) {
       throw new AnalysisError(
-        `Gemini auth failure. Raw: ${error.message}`, 
-        'AUTH'
+        `Gemini API Quota / Rate Limit Exceeded. (${error.message})`, 
+        'RATE_LIMIT'
       );
     }
 
     // Everything else — pass real error
     throw new AnalysisError(
-      `Gemini API error: ${error.message || 'Unknown error'}`, 
+      `Gemini API Error: ${error.message || 'Unknown error'}`, 
       'UNKNOWN'
     );
   }
