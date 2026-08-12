@@ -79,8 +79,8 @@ export const callGeminiAPI = async (newsText: string): Promise<AnalysisResult> =
 
   const ai = new GoogleGenAI({ apiKey });
   
-  // gemini-2.0-flash supports Google Search grounding
-  const MODEL = "gemini-2.0-flash";
+  // Configured model: gemini-3.6-flash (or via process.env.GEMINI_MODEL)
+  const MODEL = process.env.GEMINI_MODEL || "gemini-3.6-flash";
   
   const prompt = `Fact-check this claim using Search Grounding. Return ONLY valid JSON matching this schema:
   {"verdict":"REAL"|"FAKE"|"MISLEADING"|"UNVERIFIED","confidence":<0-100>,"explanation":"<brief_explanation_english>","explanation_te":"<brief_explanation_in_telugu_script>","keyPoints":["<fact1_english>","<fact2_english>"],"keyPoints_te":["<fact1_telugu>","<fact2_telugu>"],"bias":<0-100>,"sensationalism":<0-100>,"logicalConsistency":<0-100>,"sourceVerification":[{"uri":"<url>","verified":<boolean>}]}

@@ -183,25 +183,20 @@ const InputForm: React.FC<InputFormProps> = ({ onAnalyze, error, isLoading }) =>
         transition={{ type: 'spring', stiffness: 300, damping: 20 }}
       >
         {/* Inner content area */}
-        <div className="rounded-[1.1rem] overflow-hidden bg-black/30">
+        <div className="rounded-[1.1rem] overflow-hidden bg-black/40 backdrop-blur-md border border-white/[0.04]">
           {/* Header bar */}
-          <div className="flex items-center justify-between px-6 pt-4 pb-2 border-b border-white/[0.04]">
+          <div className="flex items-center justify-between px-5 pt-3.5 pb-1.5 border-b border-white/[0.04]">
             <div className="flex items-center gap-2">
               <FileText className="w-3.5 h-3.5 text-indigo-400" />
               <span className="text-[10px] font-bold tracking-widest uppercase text-zinc-400">
-                Check a Claim or Article
+                Verification Input
               </span>
             </div>
 
-            {isListening ? (
-              <span className="text-[10px] font-bold text-rose-300 uppercase tracking-wider flex items-center gap-2 bg-rose-500/15 border border-rose-500/30 px-2.5 py-1 rounded-full animate-pulse">
-                <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping" />
-                Listening ({selectedLangObj.flag} {selectedLangObj.native})
-              </span>
-            ) : (
-              <span className="text-[10px] font-medium text-zinc-500 hidden sm:inline flex items-center gap-1.5">
-                <Sparkles className="w-3 h-3 text-cyan-400/80" />
-                Speech & Text Enabled
+            {isListening && (
+              <span className="text-[10px] font-bold text-rose-300 uppercase tracking-wider flex items-center gap-2 bg-rose-500/15 border border-rose-500/30 px-2.5 py-0.5 rounded-full animate-pulse">
+                <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-ping" />
+                Listening ({selectedLangObj.native})
               </span>
             )}
           </div>
@@ -209,13 +204,13 @@ const InputForm: React.FC<InputFormProps> = ({ onAnalyze, error, isLoading }) =>
           <textarea
             value={text}
             onChange={(e) => setText(e.target.value)}
-            placeholder={`Paste an article, social claim, or click "Speech Mic" to dictate in ${selectedLangObj.name} (${selectedLangObj.native})...`}
-            className="input-vivid-textarea w-full h-40 bg-transparent border-none focus:ring-0 px-6 py-3 text-[15px] font-medium resize-none leading-relaxed relative z-10 outline-none"
+            placeholder="Paste text, news article, or URL to verify..."
+            className="input-vivid-textarea w-full h-36 bg-transparent border-none focus:ring-0 px-5 py-3 text-[15px] font-medium resize-none leading-relaxed relative z-10 outline-none placeholder:text-zinc-500"
             disabled={isLocked || isLoading}
           />
 
           {/* Bottom Action Bar */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between px-5 py-3 border-t border-white/[0.06] bg-black/40 gap-3">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between px-5 py-3 border-t border-white/[0.06] bg-black/50 gap-3">
             {/* Left: Character count */}
             <div className="flex items-center gap-3 shrink-0">
               <span className={`text-[10px] font-bold tracking-widest uppercase ${charCount >= 10 ? 'text-zinc-400' : 'text-zinc-600'}`}>
@@ -240,17 +235,14 @@ const InputForm: React.FC<InputFormProps> = ({ onAnalyze, error, isLoading }) =>
                     title="Select Speech Language"
                     className={`group border rounded-xl px-3 py-2 flex items-center gap-2 transition-all duration-200 cursor-pointer ${
                       isLangDropdownOpen
-                        ? 'bg-indigo-950/60 border-indigo-400 text-white shadow-lg shadow-indigo-500/20'
-                        : 'bg-white/[0.05] border-white/[0.09] text-zinc-300 hover:bg-white/[0.09] hover:border-indigo-500/40 hover:text-white'
+                        ? 'bg-indigo-950/60 border-indigo-400/80 text-white shadow-lg shadow-indigo-500/20'
+                        : 'bg-white/[0.04] border-white/[0.08] text-zinc-300 hover:bg-white/[0.08] hover:border-indigo-500/30 hover:text-white'
                     } ${isListening || isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
                   >
                     <Globe className="w-3.5 h-3.5 text-indigo-400 group-hover:rotate-45 transition-transform duration-300 shrink-0" />
-                    <span className="text-sm shrink-0">{selectedLangObj.flag}</span>
-                    <span className="text-[11px] font-bold tracking-wide max-w-[90px] truncate">
+                    <span className="text-xs shrink-0">{selectedLangObj.flag}</span>
+                    <span className="text-xs font-semibold text-zinc-200">
                       {selectedLangObj.native}
-                    </span>
-                    <span className="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 hidden xs:inline">
-                      {selectedLangObj.badge}
                     </span>
                     <ChevronDown
                       className={`w-3.5 h-3.5 text-zinc-400 transition-transform duration-200 shrink-0 ${
@@ -267,23 +259,18 @@ const InputForm: React.FC<InputFormProps> = ({ onAnalyze, error, isLoading }) =>
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 6, scale: 0.95 }}
                         transition={{ duration: 0.15, ease: 'easeOut' }}
-                        className="absolute bottom-full mb-2 right-0 z-50 w-64 rounded-2xl bg-[#090D16]/95 backdrop-blur-2xl border border-indigo-500/30 shadow-2xl shadow-black/90 p-2 space-y-2"
+                        className="absolute bottom-full mb-2 right-0 z-50 w-64 rounded-2xl bg-[#0b0f19]/95 backdrop-blur-2xl border border-white/10 shadow-2xl shadow-black/90 p-2.5 space-y-2"
                       >
-                        {/* Dropdown Header & Search */}
-                        <div className="p-1">
-                          <div className="text-[10px] font-extrabold uppercase tracking-widest text-indigo-400 px-2 mb-1.5">
-                            Speech Recognition Language
-                          </div>
-                          <div className="relative">
-                            <Search className="w-3.5 h-3.5 text-zinc-500 absolute left-2.5 top-1/2 -translate-y-1/2" />
-                            <input
-                              type="text"
-                              value={searchQuery}
-                              onChange={(e) => setSearchQuery(e.target.value)}
-                              placeholder="Search language..."
-                              className="w-full bg-white/[0.05] border border-white/[0.08] rounded-xl pl-8 pr-3 py-1.5 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-indigo-500/50"
-                            />
-                          </div>
+                        {/* Search Input */}
+                        <div className="relative">
+                          <Search className="w-3.5 h-3.5 text-zinc-500 absolute left-3 top-1/2 -translate-y-1/2" />
+                          <input
+                            type="text"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            placeholder="Search language..."
+                            className="w-full bg-white/[0.05] border border-white/[0.08] rounded-xl pl-8 pr-3 py-1.5 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-indigo-500/50"
+                          />
                         </div>
 
                         {/* Options List */}
@@ -304,13 +291,13 @@ const InputForm: React.FC<InputFormProps> = ({ onAnalyze, error, isLoading }) =>
                                     setIsLangDropdownOpen(false);
                                     setSearchQuery('');
                                   }}
-                                  className={`w-full px-2.5 py-2 rounded-xl text-left flex items-center justify-between transition-all ${
+                                  className={`w-full px-3 py-2 rounded-xl text-left flex items-center justify-between transition-all ${
                                     isSelected
-                                      ? 'bg-indigo-600/30 border border-indigo-500/40 text-white font-bold'
+                                      ? 'bg-gradient-to-r from-indigo-500/20 to-cyan-500/20 border border-indigo-500/40 text-white font-bold'
                                       : 'hover:bg-white/[0.06] text-zinc-300 hover:text-white border border-transparent'
                                   }`}
                                 >
-                                  <div className="flex items-center gap-2 min-w-0">
+                                  <div className="flex items-center gap-2.5 min-w-0">
                                     <span className="text-base shrink-0">{lang.flag}</span>
                                     <div className="min-w-0">
                                       <div className="text-xs font-semibold truncate leading-tight">
@@ -323,11 +310,11 @@ const InputForm: React.FC<InputFormProps> = ({ onAnalyze, error, isLoading }) =>
                                   </div>
 
                                   <div className="flex items-center gap-1.5 shrink-0">
-                                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-400 border border-zinc-700/50">
+                                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-zinc-800/80 text-zinc-400 border border-zinc-700/50">
                                       {lang.badge}
                                     </span>
                                     {isSelected && (
-                                      <Check className="w-4 h-4 text-cyan-400 shrink-0" />
+                                      <Check className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
                                     )}
                                   </div>
                                 </button>
@@ -341,54 +328,34 @@ const InputForm: React.FC<InputFormProps> = ({ onAnalyze, error, isLoading }) =>
                 </div>
               )}
 
-              {/* Inline Speech-to-Text Button (Vibrant & Interactive) */}
+              {/* Icon-Only Speech Mic Button (Circular with Half-Glowing Outline Border) */}
               {speechSupported && (
-                <button
-                  type="button"
-                  onClick={toggleSpeechToText}
-                  title={isListening ? "Stop Listening" : `Speak in ${selectedLangObj.name}`}
-                  className={`px-3.5 py-2 rounded-xl font-bold flex items-center gap-2 transition-all duration-200 border cursor-pointer ${
+                <motion.div
+                  whileHover={{ scale: 1.08 }}
+                  whileTap={{ scale: 0.94 }}
+                  className={`relative p-[1.5px] rounded-full transition-all duration-300 ${
                     isListening
-                      ? 'bg-gradient-to-r from-rose-600 via-pink-600 to-rose-500 text-white border-rose-400 shadow-lg shadow-rose-500/30 scale-[1.02]'
-                      : 'bg-cyan-500/10 text-cyan-300 border-cyan-500/30 hover:bg-cyan-500/20 hover:border-cyan-400 hover:text-white shadow-sm hover:shadow-cyan-500/10'
+                      ? 'bg-gradient-to-tr from-rose-500 via-pink-500 to-transparent shadow-[0_0_14px_rgba(244,63,94,0.7)] animate-pulse'
+                      : 'bg-gradient-to-tr from-cyan-400 via-indigo-500 to-transparent shadow-[0_0_12px_rgba(6,182,212,0.45)]'
                   }`}
                 >
-                  {isListening ? (
-                    <>
-                      {/* Active Soundwave Equalizer */}
-                      <div className="flex items-center gap-0.5 h-3.5 px-0.5">
-                        <motion.span
-                          animate={{ height: ['20%', '100%', '30%'] }}
-                          transition={{ repeat: Infinity, duration: 0.5, ease: "easeInOut" }}
-                          className="w-0.5 bg-white rounded-full"
-                        />
-                        <motion.span
-                          animate={{ height: ['60%', '20%', '90%'] }}
-                          transition={{ repeat: Infinity, duration: 0.6, ease: "easeInOut", delay: 0.1 }}
-                          className="w-0.5 bg-white rounded-full"
-                        />
-                        <motion.span
-                          animate={{ height: ['30%', '90%', '40%'] }}
-                          transition={{ repeat: Infinity, duration: 0.4, ease: "easeInOut", delay: 0.2 }}
-                          className="w-0.5 bg-white rounded-full"
-                        />
-                      </div>
-                      <MicOff className="w-3.5 h-3.5" />
-                      <span className="text-[11px] font-extrabold tracking-wider uppercase">
-                        Listening
-                      </span>
-                    </>
-                  ) : (
-                    <>
-                      <div className="p-1 rounded-md bg-cyan-500/20 text-cyan-300">
-                        <Mic className="w-3.5 h-3.5" />
-                      </div>
-                      <span className="text-[11px] font-bold tracking-wide">
-                        Speech Mic
-                      </span>
-                    </>
-                  )}
-                </button>
+                  <button
+                    type="button"
+                    onClick={toggleSpeechToText}
+                    title={isListening ? "Stop Listening" : `Speak in ${selectedLangObj.name}`}
+                    className={`w-9 h-9 rounded-full flex items-center justify-center transition-all duration-200 cursor-pointer ${
+                      isListening
+                        ? 'bg-[#180914] text-white'
+                        : 'bg-[#090d16] text-cyan-300 hover:text-white'
+                    }`}
+                  >
+                    {isListening ? (
+                      <MicOff className="w-4 h-4 text-white" />
+                    ) : (
+                      <Mic className="w-4 h-4 text-cyan-400" />
+                    )}
+                  </button>
+                </motion.div>
               )}
 
               {/* Analyze CTA Button */}
@@ -403,7 +370,7 @@ const InputForm: React.FC<InputFormProps> = ({ onAnalyze, error, isLoading }) =>
                 whileHover={isReady ? { scale: 1.04, y: -1 } : {}}
                 whileTap={isReady ? { scale: 0.97 } : {}}
               >
-                <Zap className="w-3.5 h-3.5 text-amber-300 fill-amber-300/30" />
+                <Sparkles className="w-3.5 h-3.5 text-cyan-300" />
                 <span className="text-[11px] uppercase tracking-wider font-extrabold">
                   {isLocked || isLoading ? "Processing..." : "Analyze"}
                 </span>
