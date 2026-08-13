@@ -87,10 +87,10 @@ export const callGeminiAPI = async (newsText: string): Promise<AnalysisResult> =
   try {
     const ai = new GoogleGenAI({ apiKey });
     const CANDIDATE_MODELS = [
+      "gemini-3.6-flash",
       "gemini-2.0-flash",
       "gemini-1.5-flash",
-      "gemini-1.5-pro",
-      "gemini-2.0-flash-lite-preview-02-05"
+      "gemini-1.5-pro"
     ];
 
     for (const model of CANDIDATE_MODELS) {
