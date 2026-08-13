@@ -20,6 +20,7 @@ interface AppState {
 const Home: React.FC = () => {
   const [appState, setAppState] = useState<AppState>({ status: 'idle', result: null });
   const [currentText, setCurrentText] = useState('');
+  const [inputLang, setInputLang] = useState<string>('en-US');
   const [error, setError] = useState<string | null>(null);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const { user, isAdmin, signOut } = useAuth();
@@ -28,9 +29,10 @@ const Home: React.FC = () => {
   const result = appState.result;
 
 
-  const handleAnalyze = async (text: string, forceAI = false) => {
+  const handleAnalyze = async (text: string, forceAI = false, langCode = 'en-US') => {
     // ── Step 1: Input validation ──────────────────────────────────────────────
-    console.log('[Home] handleAnalyze START. text length:', text?.length, 'forceAI:', forceAI);
+    console.log('[Home] handleAnalyze START. text length:', text?.length, 'forceAI:', forceAI, 'langCode:', langCode);
+    setInputLang(langCode);
 
     if (!text || typeof text !== 'string' || text.trim().length < 10) {
       console.warn('[Home] handleAnalyze: text too short, aborting.');
@@ -46,8 +48,8 @@ const Home: React.FC = () => {
 
     try {
       // ── Step 3: API Call ───────────────────────────────────────────────────
-      console.log('[Home] handleAnalyze: calling apiService.analyzeText...');
-      const data = await apiService.analyzeText(text, forceAI);
+      console.log('[Home] handleAnalyze: calling apiService.analyzeText with langCode:', langCode);
+      const data = await apiService.analyzeText(text, forceAI, langCode);
       console.log('[Home] handleAnalyze: apiService returned:', data);
 
       // ── Step 4: Validate response shape ────────────────────────────────────
@@ -159,23 +161,19 @@ const Home: React.FC = () => {
           </div>
         </header>
 
-        <main className="relative z-10 pt-28 pb-20 px-6 flex-1 overflow-y-auto">
-          <AnimatePresence mode="sync">
+        {/* Dynamic Content Views */}
+        <main className="flex-1 max-w-7xl w-full mx-auto px-6 pt-28 pb-16 relative">
+          <AnimatePresence mode="wait">
             {status === 'idle' && (
               <motion.div
-                key="idle"
-                initial={{ opacity: 0, y: 30 }}
+                key="input"
+                initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -30 }}
-                transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-                className="max-w-4xl mx-auto space-y-16 text-center"
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                className="space-y-12 py-6"
               >
-                {/* Hero section */}
-                <motion.div
-                  className="space-y-6 relative"
-                  animate={{ y: [0, -6, 0] }}
-                  transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
-                >
+                <motion.div className="text-center space-y-4 max-w-3xl mx-auto relative">
                   <div
                     className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[300px] rounded-full blur-[120px] opacity-[0.06] pointer-events-none"
                     style={{ background: 'radial-gradient(circle, rgba(99,102,241,1) 0%, transparent 70%)' }}
@@ -185,10 +183,10 @@ const Home: React.FC = () => {
                     <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">AI-Powered Verification Engine</span>
                   </div>
                   <h1 className="text-5xl md:text-8xl font-display font-extrabold tracking-tighter gradient-text leading-[1.1] relative z-10">
-                    Truth, Verified <br />Instantly.
+                    Truth, Verified <br />Instantly.
                   </h1>
                   <p className="text-zinc-400 text-lg md:text-xl font-medium max-w-2xl mx-auto relative z-10 leading-relaxed">
-                    Analyze news, claims, and content using advanced AI to detect <br className="hidden md:block" />
+                    Analyze news, claims, and content using advanced AI to detect <br className="hidden md:block" />
                     truth, bias, and misinformation — in seconds.
                   </p>
                 </motion.div>
@@ -207,7 +205,7 @@ const Home: React.FC = () => {
               >
                 {/* Local ErrorBoundary: catches render crashes inside ResultsCard */}
                 <ErrorBoundary fallbackMessage="Result display failed. Your analysis was saved to history.">
-                  <ResultsCard result={result} onReset={reset} />
+                  <ResultsCard result={result} inputLang={inputLang} onReset={reset} />
                 </ErrorBoundary>
               </motion.div>
             )}

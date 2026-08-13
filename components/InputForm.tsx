@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 
 interface InputFormProps {
-  onAnalyze: (text: string) => void;
+  onAnalyze: (text: string, forceAI?: boolean, langCode?: string) => void;
   error: string | null;
   isLoading: boolean;
 }
@@ -51,7 +51,7 @@ const InputForm: React.FC<InputFormProps> = ({ onAnalyze, error, isLoading }) =>
   const [text, setText] = useState('');
   const [isLocked, setIsLocked] = useState(false);
   const [isListening, setIsListening] = useState(false);
-  const [selectedLang, setSelectedLang] = useState('te-IN'); // Default to Telugu
+  const [selectedLang, setSelectedLang] = useState('en-US'); // Default to English
   const [speechSupported, setSpeechSupported] = useState(true);
   const [isLangDropdownOpen, setIsLangDropdownOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -155,8 +155,8 @@ const InputForm: React.FC<InputFormProps> = ({ onAnalyze, error, isLoading }) =>
 
     lastSubmitTime.current = now;
     setIsLocked(true);
-    onAnalyze(text.trim());
-  }, [text, isLoading, isLocked, isListening, onAnalyze]);
+    onAnalyze(text.trim(), false, selectedLang);
+  }, [text, isLoading, isLocked, isListening, onAnalyze, selectedLang]);
 
   const charCount = text.length;
   const isReady = text.trim().length >= 10 && !isLocked && !isLoading;

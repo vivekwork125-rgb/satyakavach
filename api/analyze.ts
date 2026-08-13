@@ -192,10 +192,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const aiStartTime = Date.now();
     console.log(`[API /analyze] 🚀 Calling Gemini API via service layer...`);
     
-    // Stamp throttle time immediately before the Gemini call
-    lastRequestTime.set(throttleKey, Date.now());
-
-    const result = await executeWithRetry(() => callGeminiAPI(text), 2);
+    const langCode = typeof req.body?.langCode === 'string' ? req.body.langCode : 'en-US';
+    const result = await executeWithRetry(() => callGeminiAPI(text, langCode), 2);
     
     const aiLatency = Date.now() - aiStartTime;
     console.log(`[API /analyze] ✅ Gemini request completed in ${aiLatency}ms`);

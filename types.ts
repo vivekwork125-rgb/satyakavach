@@ -4,8 +4,13 @@ export interface AnalysisResult {
   confidence: number;
   explanation: string;
   explanation_te?: string;
+  explanation_regional?: string;
   keyPoints: string[];
   keyPoints_te?: string[];
+  keyPoints_regional?: string[];
+  targetLangCode?: string;
+  targetLangName?: string;
+  targetLangNative?: string;
   sources: { title: string; uri: string; verified: boolean }[];
   categories: {
     bias: number;

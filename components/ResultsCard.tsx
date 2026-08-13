@@ -10,6 +10,7 @@ import { AnalysisResult } from '../types';
 
 interface ResultsCardProps {
   result: AnalysisResult;
+  inputLang?: string;
   onReset: () => void;
 }
 
@@ -74,20 +75,58 @@ const getRiskLevel = (confidence: number, verdict: string): { level: string; cla
   return { level: 'MEDIUM', className: 'risk-badge-medium', icon: AlertTriangle };
 };
 
-const ResultsCard: React.FC<ResultsCardProps> = ({ result, onReset }) => {
-  // Auto-detect if Telugu script [\u0C00-\u0C7F] is present in explanation or result
-  const isTeluguContent = useMemo(() => {
-    const textToCheck = `${result?.explanation || ''} ${result?.explanation_te || ''}`;
-    return /[\u0C00-\u0C7F]/.test(textToCheck);
-  }, [result]);
+const LANG_LABEL_MAP: Record<string, { label: string; bcp47: string }> = {
+  'hi-IN': { label: 'हिन्दी (Hindi)', bcp47: 'hi-IN' },
+  'hi': { label: 'हिन्दी (Hindi)', bcp47: 'hi-IN' },
+  'te-IN': { label: 'తెలుగు (Telugu)', bcp47: 'te-IN' },
+  'te': { label: 'తెలుగు (Telugu)', bcp47: 'te-IN' },
+  'ta-IN': { label: 'தமிழ் (Tamil)', bcp47: 'ta-IN' },
+  'ta': { label: 'தமிழ் (Tamil)', bcp47: 'ta-IN' },
+  'kn-IN': { label: 'ಕನ್ನಡ (Kannada)', bcp47: 'kn-IN' },
+  'kn': { label: 'ಕನ್ನಡ (Kannada)', bcp47: 'kn-IN' },
+  'ml-IN': { label: 'മലയാളം (Malayalam)', bcp47: 'ml-IN' },
+  'ml': { label: 'മലയാളം (Malayalam)', bcp47: 'ml-IN' },
+  'mr-IN': { label: 'మరాఠీ (Marathi)', bcp47: 'mr-IN' },
+  'mr': { label: 'మరాఠీ (Marathi)', bcp47: 'mr-IN' },
+  'bn-IN': { label: 'বাংলা (Bengali)', bcp47: 'bn-IN' },
+  'bn': { label: 'বাংলা (Bengali)', bcp47: 'bn-IN' },
+  'es-ES': { label: 'Español (Spanish)', bcp47: 'es-ES' },
+  'es': { label: 'Español (Spanish)', bcp47: 'es-ES' },
+  'fr-FR': { label: 'Français (French)', bcp47: 'fr-FR' },
+  'fr': { label: 'Français (French)', bcp47: 'fr-FR' },
+  'de-DE': { label: 'Deutsch (German)', bcp47: 'de-DE' },
+  'de': { label: 'Deutsch (German)', bcp47: 'de-DE' },
+  'zh-CN': { label: '中文 (Chinese)', bcp47: 'zh-CN' },
+  'zh': { label: '中文 (Chinese)', bcp47: 'zh-CN' },
+  'ar-SA': { label: 'العربية (Arabic)', bcp47: 'ar-SA' },
+  'ar': { label: 'العربية (Arabic)', bcp47: 'ar-SA' },
+  'ru-RU': { label: 'Русский (Russian)', bcp47: 'ru-RU' },
+  'ru': { label: 'Русский (Russian)', bcp47: 'ru-RU' },
+  'ja-JP': { label: '日本語 (Japanese)', bcp47: 'ja-JP' },
+  'ja': { label: '日本語 (Japanese)', bcp47: 'ja-JP' },
+};
 
-  const [langMode, setLangMode] = useState<'en' | 'te'>(isTeluguContent ? 'te' : 'en');
-  const [isSpeaking, setIsSpeaking] = useState(false);
+const ResultsCard: React.FC<ResultsCardProps> = ({ result, inputLang = 'en-US', onReset }) => {
+  const activeLangCode = result?.targetLangCode || inputLang || 'en-US';
 
-  // Sync langMode when result changes
+  const isInputEnglish = useMemo(() => {
+    if (!activeLangCode) return true;
+    return activeLangCode.toLowerCase().startsWith('en');
+  }, [activeLangCode]);
+
+  const targetLangInfo = useMemo(() => {
+    if (isInputEnglish) return null;
+    return LANG_LABEL_MAP[activeLangCode] || { label: result?.targetLangNative ? `${result.targetLangNative} (${result.targetLangName || 'Regional'})` : 'Regional Language', bcp47: activeLangCode };
+  }, [activeLangCode, isInputEnglish, result]);
+
+  // Set default language mode: if input is English -> 'en', if non-English -> 'regional'
+  const [langMode, setLangMode] = useState<'en' | 'regional'>(() => (isInputEnglish ? 'en' : 'regional'));
+
   useEffect(() => {
-    setLangMode(isTeluguContent ? 'te' : 'en');
-  }, [isTeluguContent]);
+    setLangMode(isInputEnglish ? 'en' : 'regional');
+  }, [isInputEnglish]);
+
+  const [isSpeaking, setIsSpeaking] = useState(false);
 
   // Safe field access with explicit defaults
   const safeVerdict = result?.verdict || 'UNVERIFIED';
@@ -109,12 +148,17 @@ const ResultsCard: React.FC<ResultsCardProps> = ({ result, onReset }) => {
     };
   }, []);
 
-  const currentExplanation = langMode === 'te'
-    ? (result?.explanation_te || `పరిశీలన ఫలితం: ${safeVerdict}. విశ్వసనీయత శాతం: ${safeConfidence}%. ${result?.explanation || ''}`)
+  const regionalExplanation = result?.explanation_regional || result?.explanation_te;
+  const regionalKeyPoints = (result?.keyPoints_regional && result.keyPoints_regional.length > 0)
+    ? result.keyPoints_regional
+    : (result?.keyPoints_te && result.keyPoints_te.length > 0 ? result.keyPoints_te : []);
+
+  const currentExplanation = langMode === 'regional' && regionalExplanation
+    ? regionalExplanation
     : (result?.explanation || 'Analysis complete.');
 
-  const currentKeyPoints = langMode === 'te'
-    ? (result?.keyPoints_te && result.keyPoints_te.length > 0 ? result.keyPoints_te : result?.keyPoints || [])
+  const currentKeyPoints = langMode === 'regional' && regionalKeyPoints.length > 0
+    ? regionalKeyPoints
     : (result?.keyPoints || []);
 
   const handleSpeak = () => {
@@ -129,7 +173,7 @@ const ResultsCard: React.FC<ResultsCardProps> = ({ result, onReset }) => {
     window.speechSynthesis.cancel();
     
     const utterance = new SpeechSynthesisUtterance(fullSpeechText);
-    utterance.lang = langMode === 'te' ? 'te-IN' : 'en-US';
+    utterance.lang = langMode === 'regional' ? (targetLangInfo?.bcp47 || 'hi-IN') : 'en-US';
     utterance.rate = 0.95;
 
     utterance.onstart = () => setIsSpeaking(true);
@@ -269,7 +313,7 @@ const ResultsCard: React.FC<ResultsCardProps> = ({ result, onReset }) => {
                   Verified Earlier
                 </motion.div>
               )}
-              {result.search_count && result.search_count > 1 && (
+              {Boolean(result.search_count && result.search_count > 1) && (
                 <motion.div
                   initial={{ opacity: 0, scale: 0.8 }}
                   animate={{ opacity: 1, scale: 1 }}
@@ -291,18 +335,20 @@ const ResultsCard: React.FC<ResultsCardProps> = ({ result, onReset }) => {
               </motion.div>
             </div>
 
-            <motion.h2
-              className="text-5xl md:text-7xl font-display font-black tracking-tighter leading-none"
-              style={{ color: meta.color, textShadow: `0 0 40px ${meta.glow}` }}
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.8, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
-            >
-              {safeVerdict}
-            </motion.h2>
-            <p className="text-zinc-400 text-sm font-medium opacity-80 max-w-md">
-              Evaluated with {safeConfidence}% precision across global verification nodes.
-            </p>
+            <div className="space-y-1 pt-1">
+              <motion.h2
+                className="text-5xl md:text-7xl font-display font-black tracking-tighter leading-none"
+                style={{ color: meta.color, textShadow: `0 0 40px ${meta.glow}` }}
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.8, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
+              >
+                {safeVerdict}
+              </motion.h2>
+              <p className="text-zinc-300 text-xs md:text-sm font-semibold tracking-wide opacity-90">
+                {safeVerdict === 'REAL' ? 'Verified True Fact' : safeVerdict === 'FAKE' ? 'Debunked Claim (Fake News)' : safeVerdict === 'MISLEADING' ? 'Misleading Information' : 'Unverified Claim'}
+              </p>
+            </div>
           </div>
 
           <motion.button
@@ -331,30 +377,36 @@ const ResultsCard: React.FC<ResultsCardProps> = ({ result, onReset }) => {
 
             <div className="flex items-center gap-2">
               {/* Language Switcher */}
-              <div className="flex items-center bg-black/40 p-1 rounded-xl border border-white/10">
-                <button
-                  type="button"
-                  onClick={() => setLangMode('en')}
-                  className={`px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all ${
-                    langMode === 'en'
-                      ? 'bg-indigo-600 text-white shadow-md'
-                      : 'text-zinc-400 hover:text-white'
-                  }`}
-                >
-                  English
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setLangMode('te')}
-                  className={`px-3 py-1 rounded-lg text-[10px] font-bold tracking-wider transition-all ${
-                    langMode === 'te'
-                      ? 'bg-indigo-600 text-white shadow-md'
-                      : 'text-zinc-400 hover:text-white'
-                  }`}
-                >
-                  తెలుగు (Telugu)
-                </button>
-              </div>
+              {isInputEnglish ? (
+                <div className="flex items-center bg-indigo-600/20 px-3.5 py-1.5 rounded-xl border border-indigo-500/30 text-[10px] font-bold uppercase tracking-wider text-indigo-300">
+                  <Globe className="w-3.5 h-3.5 mr-1.5 text-indigo-400" /> English
+                </div>
+              ) : (
+                <div className="flex items-center bg-black/40 p-1 rounded-xl border border-white/10">
+                  <button
+                    type="button"
+                    onClick={() => setLangMode('en')}
+                    className={`px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all ${
+                      langMode === 'en'
+                        ? 'bg-indigo-600 text-white shadow-md'
+                        : 'text-zinc-400 hover:text-white'
+                    }`}
+                  >
+                    English
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setLangMode('regional')}
+                    className={`px-3 py-1 rounded-lg text-[10px] font-bold tracking-wider transition-all ${
+                      langMode === 'regional'
+                        ? 'bg-indigo-600 text-white shadow-md'
+                        : 'text-zinc-400 hover:text-white'
+                    }`}
+                  >
+                    {targetLangInfo?.label || 'Regional Language'}
+                  </button>
+                </div>
+              )}
 
               {/* Read Aloud Button */}
               <button
@@ -375,28 +427,30 @@ const ResultsCard: React.FC<ResultsCardProps> = ({ result, onReset }) => {
             </div>
           </div>
 
-          <div className="space-y-2">
-            <p className="text-xl md:text-2xl font-bold leading-tight text-white">
+          <div className="p-6 rounded-2xl bg-white/[0.02] border border-white/[0.05]">
+            <h5 className="text-[9px] font-bold text-zinc-500 uppercase tracking-[0.3em] mb-2">
+              Analysis Brief
+            </h5>
+            <p className="text-lg md:text-xl font-semibold leading-relaxed text-zinc-100">
               {currentExplanation}
             </p>
           </div>
 
-          {/* Key Points */}
-          <div className="space-y-2.5">
-            <h5 className="text-[9px] font-bold text-zinc-600 uppercase tracking-[0.4em]">
-              {langMode === 'te' ? 'ముఖ్యమైన అంశాలు (Key Findings)' : 'Key Findings'}
+          {/* Key Findings */}
+          <div className="space-y-2.5 pt-2">
+            <h5 className="text-[9px] font-bold text-zinc-500 uppercase tracking-[0.3em]">
+              Key Findings
             </h5>
-            {currentKeyPoints.map((p, i) => (
+            {currentKeyPoints.slice(0, 3).map((p, i) => (
               <motion.div
                 key={i}
                 custom={i}
                 variants={pointVariants}
                 initial="hidden"
                 animate="visible"
-                className="px-5 py-4 rounded-2xl bg-white/[0.02] border border-white/[0.04] flex gap-4 items-start hover:bg-white/[0.04] hover:border-white/[0.08] transition-all duration-300 group"
-                whileHover={{ x: 4, transition: { duration: 0.2 } }}
+                className="px-4 py-3 rounded-2xl bg-white/[0.02] border border-white/[0.04] flex gap-3.5 items-start hover:bg-white/[0.04] transition-all duration-300 group"
               >
-                <span className="text-[10px] font-black text-zinc-700 pt-1 group-hover:text-indigo-400 transition-colors">0{i+1}</span>
+                <span className="text-[10px] font-black text-indigo-400 pt-0.5 group-hover:text-cyan-400 transition-colors">0{i+1}</span>
                 <p className="text-sm font-medium text-zinc-300 leading-relaxed">{p || "Verification detail pending..."}</p>
               </motion.div>
             ))}

@@ -15,9 +15,12 @@ function normalizeAnalysisResult(res: any): any {
 
   const VALID_VERDICTS = ['REAL', 'FAKE', 'MISLEADING', 'UNVERIFIED'];
   const verdict = VALID_VERDICTS.includes(res.verdict) ? res.verdict : 'UNVERIFIED';
-  const confidence = typeof res.confidence === 'number' && isFinite(res.confidence)
-    ? Math.max(0, Math.min(100, Math.round(res.confidence)))
-    : 50;
+  
+  let rawConf = typeof res.confidence === 'number' && isFinite(res.confidence) ? res.confidence : 50;
+  if (rawConf > 0 && rawConf <= 1) {
+    rawConf = rawConf * 100;
+  }
+  const confidence = Math.max(0, Math.min(100, Math.round(rawConf)));
 
   const normalized = {
     verdict,
@@ -28,12 +31,21 @@ function normalizeAnalysisResult(res: any): any {
     explanation_te: (typeof res.explanation_te === 'string' && res.explanation_te.trim())
       ? res.explanation_te.trim()
       : undefined,
+    explanation_regional: (typeof res.explanation_regional === 'string' && res.explanation_regional.trim())
+      ? res.explanation_regional.trim()
+      : (typeof res.explanation_te === 'string' && res.explanation_te.trim() ? res.explanation_te.trim() : undefined),
     keyPoints: Array.isArray(res.keyPoints)
       ? res.keyPoints.filter((p: any) => typeof p === 'string' && p.trim()).slice(0, 10)
       : [],
     keyPoints_te: Array.isArray(res.keyPoints_te)
       ? res.keyPoints_te.filter((p: any) => typeof p === 'string' && p.trim()).slice(0, 10)
       : undefined,
+    keyPoints_regional: Array.isArray(res.keyPoints_regional)
+      ? res.keyPoints_regional.filter((p: any) => typeof p === 'string' && p.trim()).slice(0, 10)
+      : (Array.isArray(res.keyPoints_te) ? res.keyPoints_te.filter((p: any) => typeof p === 'string' && p.trim()).slice(0, 10) : undefined),
+    targetLangCode: res.targetLangCode,
+    targetLangName: res.targetLangName,
+    targetLangNative: res.targetLangNative,
     sources: Array.isArray(res.sources)
       ? res.sources
           .filter((s: any) => s && typeof s === 'object')
@@ -114,12 +126,12 @@ class ApiService {
   }
 
   // --- Scans ---
-  async analyzeText(text: string, forceAI: boolean = false): Promise<any> {
-    console.log('[apiService] analyzeText called. Input length:', text?.length, 'forceAI:', forceAI);
+  async analyzeText(text: string, forceAI: boolean = false, langCode: string = 'en-US'): Promise<any> {
+    console.log('[apiService] analyzeText called. Input length:', text?.length, 'forceAI:', forceAI, 'langCode:', langCode);
     try {
       const rawRes = await this.fetch('/analyze', {
         method: 'POST',
-        body: JSON.stringify({ text, forceAI }),
+        body: JSON.stringify({ text, forceAI, langCode }),
       });
       console.log('[apiService] analyzeText raw response:', rawRes);
 
